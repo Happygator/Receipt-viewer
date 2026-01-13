@@ -1,0 +1,5 @@
+discord.py
+google-generativeai
+matplotlib
+python-dotenv
+pillow
