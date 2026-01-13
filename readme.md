@@ -26,11 +26,7 @@ A Discord bot that uses AI (Google Gemini 1.5 Flash) to analyze receipt images, 
 
 ## Configuration
 
-1.  Copy the example environment file:
-    ```bash
-    cp .env.example .env
-    # OR just create a new file named .env
-    ```
+1.  Create a `.env` file
 2.  Open `.env` and add your keys:
     ```env
     DISCORD_TOKEN=your_discord_bot_token_here
