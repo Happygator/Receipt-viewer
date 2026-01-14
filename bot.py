@@ -3,8 +3,10 @@ from discord import app_commands
 import os
 import io
 from dotenv import load_dotenv
+import datetime
 from ocr_processor import process_image
 from chart_generator import generate_pie_chart
+import database
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +29,7 @@ class ReceiptBot(discord.Client):
 
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
+        database.init_db()  # Initialize DB
         print('Ready to process receipts!')
 
     async def on_message(self, message):
@@ -62,19 +65,36 @@ async def analyze(interaction: discord.Interaction, receipt: discord.Attachment)
         image_bytes = await receipt.read()
         
         # 2. Process with Gemini
-        items = process_image(image_bytes)
+        data = process_image(image_bytes)
+        items = data.get('items', [])
         
         if not items:
             await interaction.followup.send("Could not identify items. Please checking key/image.")
             return
         
-        # 3. Summarize
+        # 3. Save to Database
+        receipt_id = database.save_receipt(data)
+        
+        # 4. Summarize
         total = sum(item['price'] for item in items)
         item_count = len(items)
-        summary = f"**Found {item_count} items.**\nTotal detected: **${total:.2f}**"
+        merchant = data.get('merchant', 'Unknown Merchant')
         
-        # 4. Chart
-        chart_buf = generate_pie_chart(items)
+        # Get date from receipt, fallback to today's date if missing
+        date_str = data.get('date')
+        if not date_str or date_str == 'Unknown Date': # Handle both None and prompt default if any
+            date_str = datetime.datetime.now().strftime('%Y-%m-%d')
+
+        chart_title = f"{merchant} Expense Breakdown - {date_str}"
+
+        summary = (
+            f"**Processed Receipt**\n"
+            f"Found {item_count} items. Total: **${total:.2f}**\n"
+#            f"_Saved to database (ID: {receipt_id})_"
+        )
+        
+        # 5. Chart
+        chart_buf = generate_pie_chart(items, title=chart_title)
         
         files_to_send = []
         if chart_buf:

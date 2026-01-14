@@ -40,7 +40,8 @@ def main():
         
         # 1. Process
         print("Sending to Gemini...")
-        items = process_image(image_bytes)
+        data = process_image(image_bytes)
+        items = data.get('items', [])
         
         # 2. Results
         print(f"Found {len(items)} items:")

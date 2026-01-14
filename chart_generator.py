@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import io
 
-def generate_pie_chart(items, top_n=10):
+def generate_pie_chart(items, title="Top Expense Items", top_n=10):
     """
     Generates a pie chart for the top N most expensive items.
     Returns a bytes buffer containing the image.
@@ -50,7 +50,7 @@ def generate_pie_chart(items, top_n=10):
         textprops={'fontsize': 10}
     )
     plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.title('Top Expense Items')
+    plt.title(title, pad=20)
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches="tight")
