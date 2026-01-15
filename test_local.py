@@ -44,6 +44,9 @@ def main():
         items = data.get('items', [])
         
         # 2. Results
+        print(f"Merchant: {data.get('merchant', 'Unknown')}")
+        print(f"Address: {data.get('address', 'Unknown')}")
+        print(f"Date: {data.get('date', 'Unknown')}")
         print(f"Found {len(items)} items:")
         total = 0
         for item in items:

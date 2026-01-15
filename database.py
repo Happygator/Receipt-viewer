@@ -17,11 +17,19 @@ def init_db():
         CREATE TABLE IF NOT EXISTS receipts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             merchant TEXT,
+            address TEXT,
             date TEXT,
             total_amount REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # Check if address column exists (migration for existing DBs)
+    cursor.execute("PRAGMA table_info(receipts)")
+    columns = [info[1] for info in cursor.fetchall()]
+    if 'address' not in columns:
+        print("Migrating database: Adding address column to receipts table...")
+        cursor.execute("ALTER TABLE receipts ADD COLUMN address TEXT")
     
     # Items table
     cursor.execute('''
@@ -46,6 +54,7 @@ def save_receipt(data):
         data (dict): Expected format:
             {
                 'merchant': 'Target',
+                'address': '123 Main St',
                 'date': '2023-10-27',
                 'items': [
                     {'name': 'Milk', 'price': 3.99},
@@ -58,6 +67,7 @@ def save_receipt(data):
     
     try:
         merchant = data.get('merchant', 'Unknown')
+        address = data.get('address')
         date = data.get('date')
         items = data.get('items', [])
         
@@ -66,9 +76,9 @@ def save_receipt(data):
         
         # Insert Receipt
         cursor.execute('''
-            INSERT INTO receipts (merchant, date, total_amount)
-            VALUES (?, ?, ?)
-        ''', (merchant, date, total_amount))
+            INSERT INTO receipts (merchant, address, date, total_amount)
+            VALUES (?, ?, ?, ?)
+        ''', (merchant, address, date, total_amount))
         
         receipt_id = cursor.lastrowid
         
@@ -80,11 +90,11 @@ def save_receipt(data):
             ''', (receipt_id, item.get('name'), item.get('price')))
             
         conn.commit()
-        #print(f"Saved receipt ID {receipt_id} with {len(items)} items.")
+        print(f"Saved receipt ID {receipt_id} with {len(items)} items.")
         return receipt_id
         
     except Exception as e:
-        #print(f"Error saving to database: {e}")
+        print(f"Error saving to database: {e}")
         conn.rollback()
         raise e
     finally:

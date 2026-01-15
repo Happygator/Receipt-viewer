@@ -33,16 +33,18 @@ def process_image(image_bytes):
         You are an expert receipt parser. Analyze this receipt image.
         1. Extract the Merchant Name.
         2. Extract the Date of purchase (format: YYYY-MM-DD). If not found, look for date-like strings.
-        3. Extract a list of all purchased items.
+        3. Extract the Store Address.
+        4. Extract a list of all purchased items.
            - Name: Clean up the name (remove codes like 123456, remove tax flags like 'A' or 'Tax').
            - Price: Must be the NET price.
              * IMPORTANT: If there is a discount line below an item (e.g. "Instant Savings", "Coupon", "-4.00"), SUBTRACT it from the item's price.
              * Example: Item $19.99 followed by Discount -$4.00 -> Price should be $15.99.
-        4. Return strictly a JSON object. No markdown formatting.
+        5. Return strictly a JSON object. No markdown formatting.
         
         Schema:
         {
           "merchant": "string",
+          "address": "string",
           "date": "YYYY-MM-DD",
           "items": [
             {"name": "string", "price": number}
