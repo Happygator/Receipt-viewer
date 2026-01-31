@@ -39,13 +39,15 @@ def process_image(image_bytes):
            - Price: Must be the NET price.
              * IMPORTANT: If there is a discount line below an item (e.g. "Instant Savings", "Coupon", "-4.00"), SUBTRACT it from the item's price.
              * Example: Item $19.99 followed by Discount -$4.00 -> Price should be $15.99.
-        5. Return strictly a JSON object. No markdown formatting.
+        5. Extract the Currency symbol/code (e.g. "USD", "JPY", "EUR", "GBP"). Default to "USD" if not found.
+        6. Return strictly a JSON object. No markdown formatting.
         
         Schema:
         {
           "merchant": "string",
           "address": "string",
           "date": "YYYY-MM-DD",
+          "currency": "string",
           "items": [
             {"name": "string", "price": number}
           ]

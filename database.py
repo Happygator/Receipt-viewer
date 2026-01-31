@@ -30,6 +30,11 @@ def init_db():
     if 'address' not in columns:
         print("Migrating database: Adding address column to receipts table...")
         cursor.execute("ALTER TABLE receipts ADD COLUMN address TEXT")
+
+    # Check if currency column exists (migration for multi-currency)
+    if 'currency' not in columns:
+        print("Migrating database: Adding currency column to receipts table...")
+        cursor.execute("ALTER TABLE receipts ADD COLUMN currency TEXT DEFAULT 'USD'")
     
     # Items table
     cursor.execute('''
@@ -56,6 +61,7 @@ def save_receipt(data):
                 'merchant': 'Target',
                 'address': '123 Main St',
                 'date': '2023-10-27',
+                'currency': 'USD',
                 'items': [
                     {'name': 'Milk', 'price': 3.99},
                     ...
@@ -69,6 +75,7 @@ def save_receipt(data):
         merchant = data.get('merchant', 'Unknown')
         address = data.get('address')
         date = data.get('date')
+        currency = data.get('currency', 'USD')
         items = data.get('items', [])
         
         # Calculate total just for the record (though we can sum items later)
@@ -76,9 +83,9 @@ def save_receipt(data):
         
         # Insert Receipt
         cursor.execute('''
-            INSERT INTO receipts (merchant, address, date, total_amount)
-            VALUES (?, ?, ?, ?)
-        ''', (merchant, address, date, total_amount))
+            INSERT INTO receipts (merchant, address, date, total_amount, currency)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (merchant, address, date, total_amount, currency))
         
         receipt_id = cursor.lastrowid
         

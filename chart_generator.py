@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import io
 
-def generate_pie_chart(items, title="Top Expense Items", top_n=10):
+def generate_pie_chart(items, title="Top Expense Items", top_n=10, currency="USD"):
     """
     Generates a pie chart for the top N most expensive items.
     Returns a bytes buffer containing the image.
@@ -33,12 +33,30 @@ def generate_pie_chart(items, title="Top Expense Items", top_n=10):
         top_items.append({'name': 'Others', 'price': other_price, 'count': 1}) # Count 1 for bundle
 
     # Create labels with Count and Price
-    # Example: "3 AVOCADO OIL ($77.97)" or "AVOCADO OIL ($25.99)"
+    # Example: "3 AVOCADO OIL ($77.97)" or "AVOCADO OIL (¥2500)"
     sizes = [item['price'] for item in top_items]
     labels = []
+    
+    # Simple symbol mapping
+    currency_symbols = {
+        'USD': '$',
+        'CAD': '$',
+        'AUD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CNY': '¥',
+        'KRW': '₩',
+    }
+    symbol = currency_symbols.get(currency.upper(), currency + " ")
+
     for item in top_items:
         qty_prefix = f"{item['count']} " if item.get('count', 1) > 1 else ""
-        labels.append(f"{qty_prefix}{item['name'][:20]} (${item['price']:.2f})")
+        price_str = f"{item['price']:.2f}"
+        if currency.upper() in ['JPY', 'KRW']: # Currencies typically without decimals
+             price_str = f"{int(item['price'])}"
+             
+        labels.append(f"{qty_prefix}{item['name'][:20]} ({symbol}{price_str})")
 
     # Create plot
     plt.figure(figsize=(10, 6))

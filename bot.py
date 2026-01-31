@@ -76,9 +76,15 @@ async def analyze(interaction: discord.Interaction, receipt: discord.Attachment)
         receipt_id = database.save_receipt(data)
         
         # 4. Summarize
+        items = data.get('items', [])
         total = sum(item['price'] for item in items)
         item_count = len(items)
         merchant = data.get('merchant', 'Unknown Merchant')
+        currency = data.get('currency', 'USD')
+        
+        # Currency symbol mapping for summary
+        currency_symbols = {'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CNY': '¥', 'KRW': '₩'}
+        symbol = currency_symbols.get(currency.upper(), currency + " ")
         
         # Get date from receipt, fallback to today's date if missing
         date_str = data.get('date')
@@ -89,12 +95,12 @@ async def analyze(interaction: discord.Interaction, receipt: discord.Attachment)
 
         summary = (
             f"**Processed Receipt**\n"
-            f"Found {item_count} items. Total: **${total:.2f}**\n"
+            f"Found {item_count} items. Total: **{symbol}{total:.2f}**\n"
 #            f"_Saved to database (ID: {receipt_id})_"
         )
         
         # 5. Chart
-        chart_buf = generate_pie_chart(items, title=chart_title)
+        chart_buf = generate_pie_chart(items, title=chart_title, currency=currency)
         
         files_to_send = []
         if chart_buf:
