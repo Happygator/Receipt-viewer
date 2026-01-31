@@ -91,45 +91,54 @@ def get_cjk_font():
     """
     from matplotlib import font_manager
     
-    # Candidate fonts for Windows and Linux (including Raspberry Pi)
-    cjk_candidates = [
-        "Microsoft YaHei", "SimHei", "Malgun Gothic", "Meiryo",  # Windows
-        "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", "Noto Sans CJK SC", "Noto Sans CJK JP", "Droid Sans Fallback", # Linux
-        "Arial Unicode MS", "MS Gothic" # Fallbacks
+    # Priority 1: High-quality CJK fonts (Windows/Mac/Linux)
+    # We remove "Droid Sans Fallback" because it often lacks ASCII glyphs on some Linux systems.
+    primary_candidates = [
+        "Microsoft YaHei", "SimHei", "Malgun Gothic", "Meiryo", # Windows
+        "Noto Sans CJK JP", "Noto Sans CJK SC", "Noto Sans CJK TC", # Linux (Best)
+        "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", # Linux (Good)
     ]
-    
-    # 1. Check for exact matches first (preferred high-quality fonts)
-    for font in cjk_candidates:
-        if font in [f.name for f in font_manager.fontManager.ttflist]:
+
+    # Check loaded fonts first (fast)
+    system_font_names = [f.name for f in font_manager.fontManager.ttflist]
+    for font in primary_candidates:
+        if font in system_font_names:
             return font
             
-    # 2. Fuzzy search through all available fonts
-    # This is useful on Linux/Pi where font names might vary (e.g. "Noto Sans CJK JP Regular")
-    system_fonts = font_manager.fontManager.ttflist
+    # Priority 2: Scan system fonts explicitly for Noto CJK (Reliable on Pi)
+    # This addresses the issue where ttflist cache might be stale or incomplete.
+    try:
+        fonts = font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
+        for font_path in fonts:
+            try:
+                prop = font_manager.FontProperties(fname=font_path)
+                name = prop.get_name()
+                
+                # Check for Noto CJK families
+                if "Noto" in name and "CJK" in name:
+                     # Add to manager to ensure it's usable
+                    font_manager.fontManager.addfont(font_path)
+                    return name
+            except:
+                continue
+    except Exception as e:
+        print(f"Font scan error: {e}")
+
+    # Priority 3: Fallbacks and fuzzy matching
+    # Add 'URW Gothic' since user has it
+    fallback_candidates = ["Arial Unicode MS", "MS Gothic", "URW Gothic"]
+    for font in fallback_candidates:
+        if font in system_font_names:
+            return font
+
+    # Fuzzy search through all available loaded fonts
     cw_keywords = ['cjk', 'gothic', 'hei', 'mincho', 'song', 'kai', 'arial unicode']
-    
-    for font in system_fonts:
+    for font in font_manager.fontManager.ttflist:
         name_lower = font.name.lower()
+        if "droid" in name_lower and "fallback" in name_lower:
+             continue # Skip Droid Sans Fallback
         for kw in cw_keywords:
             if kw in name_lower:
                 return font.name
                 
-    # 3. Last ditch effort: Check for specific font files that might be on Pi but not registered with full name
-    try:
-        # Common locations for Noto CJK on Debian/Raspbian
-        import os
-        paths = [
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc"
-        ]
-        for path in paths:
-            if os.path.exists(path):
-                # Add the font specifically
-                font_manager.fontManager.addfont(path)
-                prop = font_manager.FontProperties(fname=path)
-                return prop.get_name()
-    except Exception:
-        pass
-
     return None
