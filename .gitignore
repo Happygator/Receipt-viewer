@@ -4,4 +4,4 @@ __pycache__/
 *.pyc
 testing_logs/
 .vscode/
-receipts.db
+receipt*

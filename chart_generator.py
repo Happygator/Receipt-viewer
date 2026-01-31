@@ -42,6 +42,13 @@ def generate_pie_chart(items, title="Top Expense Items", top_n=10):
 
     # Create plot
     plt.figure(figsize=(10, 6))
+    
+    # Set CJK-compatible font
+    font_name = get_cjk_font()
+    if font_name:
+        plt.rcParams['font.sans-serif'] = [font_name] + plt.rcParams['font.sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False # Fix minus sign
+        
     patches, texts, autotexts = plt.pie(
         sizes, 
         labels=labels, 
@@ -58,3 +65,39 @@ def generate_pie_chart(items, title="Top Expense Items", top_n=10):
     plt.close()
     
     return buf
+
+def get_cjk_font():
+    """
+    Checks for available CJK fonts on the system (Windows/Linux) 
+    and returns the first one found.
+    """
+    from matplotlib import font_manager
+    
+    # Candidate fonts for Windows and Linux (including Raspberry Pi)
+    cjk_candidates = [
+        "Microsoft YaHei", "SimHei", "Malgun Gothic", "Meiryo",  # Windows
+        "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", "Noto Sans CJK SC", "Noto Sans CJK JP", "Droid Sans Fallback", # Linux
+        "Arial Unicode MS", "MS Gothic" # Fallbacks
+    ]
+    
+    for font in cjk_candidates:
+        try:
+            # findfont returns the path if found, or a default fallback if not found EXACTLY.
+            # We need to be careful. font_manager.findfont(name, fallback_to_default=False) raises exception if not found.
+            # However, fallback_to_default=False is not always reliable in older versions or might behave differently.
+            # A better check is to see if the found font name matches.
+            
+            # Let's try a simpler approach compatible with common setups:
+            # simple lookup by name.
+            if font in [f.name for f in font_manager.fontManager.ttflist]:
+                return font
+                
+            # Alternatively, check by file path (costlier). 
+            # Let's rely on the name check in the system font list which is already loaded.
+        except Exception:
+            continue
+            
+    # If explicit names fail, try finding any font file that might work (less reliable without heavy logic)
+    # We'll return None and let matplotlib use default (squares) if nothing found, 
+    # but let's try to be robust.
+    return None
