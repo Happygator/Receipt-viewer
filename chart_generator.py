@@ -98,24 +98,38 @@ def get_cjk_font():
         "Arial Unicode MS", "MS Gothic" # Fallbacks
     ]
     
+    # 1. Check for exact matches first (preferred high-quality fonts)
     for font in cjk_candidates:
-        try:
-            # findfont returns the path if found, or a default fallback if not found EXACTLY.
-            # We need to be careful. font_manager.findfont(name, fallback_to_default=False) raises exception if not found.
-            # However, fallback_to_default=False is not always reliable in older versions or might behave differently.
-            # A better check is to see if the found font name matches.
+        if font in [f.name for f in font_manager.fontManager.ttflist]:
+            return font
             
-            # Let's try a simpler approach compatible with common setups:
-            # simple lookup by name.
-            if font in [f.name for f in font_manager.fontManager.ttflist]:
-                return font
+    # 2. Fuzzy search through all available fonts
+    # This is useful on Linux/Pi where font names might vary (e.g. "Noto Sans CJK JP Regular")
+    system_fonts = font_manager.fontManager.ttflist
+    cw_keywords = ['cjk', 'gothic', 'hei', 'mincho', 'song', 'kai', 'arial unicode']
+    
+    for font in system_fonts:
+        name_lower = font.name.lower()
+        for kw in cw_keywords:
+            if kw in name_lower:
+                return font.name
                 
-            # Alternatively, check by file path (costlier). 
-            # Let's rely on the name check in the system font list which is already loaded.
-        except Exception:
-            continue
-            
-    # If explicit names fail, try finding any font file that might work (less reliable without heavy logic)
-    # We'll return None and let matplotlib use default (squares) if nothing found, 
-    # but let's try to be robust.
+    # 3. Last ditch effort: Check for specific font files that might be on Pi but not registered with full name
+    try:
+        # Common locations for Noto CJK on Debian/Raspbian
+        import os
+        paths = [
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc"
+        ]
+        for path in paths:
+            if os.path.exists(path):
+                # Add the font specifically
+                font_manager.fontManager.addfont(path)
+                prop = font_manager.FontProperties(fname=path)
+                return prop.get_name()
+    except Exception:
+        pass
+
     return None
